@@ -1,1 +1,90 @@
+name: Run JMeter WebSocket Test
 
+on:
+  workflow_dispatch:
+
+jobs:
+  websocket-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Checkout the shop repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # 2. Install Java
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+
+      # 3. Download JMeter
+      - name: Download JMeter
+        run: |
+          JMETER_VERSION=5.6.3
+
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
+
+          tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+
+          mv apache-jmeter-${JMETER_VERSION} jmeter-install
+
+
+      # 4. Copy WebSocket plugins
+      - name: Install JMeter plugins
+        run: |
+
+          echo "Installing plugins..."
+
+          cp -r jmeter/lib/ext/* jmeter-install/lib/ext/
+
+          echo "Installed plugins:"
+          ls -la jmeter-install/lib/ext/
+
+
+      # 5. Create results folder
+      - name: Prepare results folder
+        run: |
+
+          mkdir -p jmeter/results/websocket/html-report
+
+
+      # 6. Run WebSocket JMeter script
+      - name: Run WebSocket Test
+        run: |
+
+          echo "Starting JMeter WebSocket test..."
+
+          ./jmeter-install/bin/jmeter \
+            -n \
+            -t jmeter/websocket.jmx \
+            -l jmeter/results/websocket/websocket.jtl \
+            -e \
+            -o jmeter/results/websocket/html-report
+
+          echo "JMeter test completed successfully."
+
+
+      # 7. Verify results
+      - name: Verify results
+        if: always()
+        run: |
+
+          echo "Result files:"
+
+          find jmeter/results/websocket -type f
+
+
+      # 8. Upload JTL and HTML report
+      - name: Upload WebSocket Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: websocket-test-results
+          path: jmeter/results/websocket/
+          retention-days: 30
