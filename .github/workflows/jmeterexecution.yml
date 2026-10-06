@@ -121,7 +121,7 @@ jobs:
 
           ./jmeter-install/bin/jmeter \
             -n \
-            -t jmeter/websocket.jmx \
+            -t Jmeter/WebSocket.jmx \
             -l jmeter/results/websocket/websocket.jtl \
             -e \
             -o jmeter/results/websocket/html-report
