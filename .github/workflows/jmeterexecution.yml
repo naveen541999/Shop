@@ -319,33 +319,7 @@ jobs:
 
 
       # ==========================================
-      # 12. Upload JTL
-      # ==========================================
-      - name: Upload JTL result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: websocket-jtl-${{ github.run_number }}
-          path: Jmeter/results/websocket/websocket.jtl
-          if-no-files-found: warn
-          retention-days: 30
-
-
-      # ==========================================
-      # 13. Upload HTML Report
-      # ==========================================
-      - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: websocket-html-report-${{ github.run_number }}
-          path: Jmeter/results/websocket/html-report/
-          if-no-files-found: warn
-          retention-days: 30
-
-
-      # ==========================================
-      # 14. Upload Complete Results
+      # 12. Upload Complete Results
       # ==========================================
       - name: Upload complete test results
         if: always()
