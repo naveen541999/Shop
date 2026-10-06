@@ -10,12 +10,16 @@ jobs:
 
     steps:
 
-      # 1. Checkout the shop repository
+      # ==========================================
+      # 1. Checkout repository
+      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
-      # 2. Install Java
+      # ==========================================
+      # 2. Setup Java
+      # ==========================================
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -23,42 +27,97 @@ jobs:
           java-version: "17"
 
 
-      # 3. Download JMeter
+      # ==========================================
+      # 3. Cache JMeter
+      # ==========================================
+      - name: Cache JMeter
+        id: jmeter-cache
+        uses: actions/cache@v4
+        with:
+          path: jmeter-install
+          key: jmeter-5.6.3-linux
+
+
+      # ==========================================
+      # 4. Download JMeter if not cached
+      # ==========================================
       - name: Download JMeter
+        if: steps.jmeter-cache.outputs.cache-hit != 'true'
         run: |
+
           JMETER_VERSION=5.6.3
 
-          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
+          echo "Downloading JMeter ${JMETER_VERSION}..."
 
-          tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+          curl -L --fail --retry 3 \
+            https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz \
+            -o apache-jmeter.tgz
+
+          echo "Extracting JMeter..."
+
+          tar -xzf apache-jmeter.tgz
 
           mv apache-jmeter-${JMETER_VERSION} jmeter-install
 
+          echo "JMeter installed successfully."
 
-      # 4. Copy WebSocket plugins
+
+      # ==========================================
+      # 5. Verify JMeter
+      # ==========================================
+      - name: Verify JMeter
+        run: |
+
+          echo "JMeter version:"
+
+          ./jmeter-install/bin/jmeter --version
+
+
+      # ==========================================
+      # 6. Install WebSocket plugins
+      # ==========================================
       - name: Install JMeter plugins
         run: |
 
-          echo "Installing plugins..."
+          echo "Installing JMeter plugins..."
 
-          cp -r jmeter/lib/ext/* jmeter-install/lib/ext/
+          if [ -d "jmeter/lib/ext" ]; then
 
-          echo "Installed plugins:"
+            cp -v jmeter/lib/ext/*.jar jmeter-install/lib/ext/ || true
+
+          else
+
+            echo "No plugin directory found."
+
+          fi
+
+          echo ""
+          echo "JMeter lib/ext contents:"
           ls -la jmeter-install/lib/ext/
 
 
-      # 5. Create results folder
-      - name: Prepare results folder
+      # ==========================================
+      # 7. Create result directory
+      # ==========================================
+      - name: Prepare result directory
         run: |
+
+          rm -rf jmeter/results/websocket
 
           mkdir -p jmeter/results/websocket/html-report
 
+          echo "Result directory created."
 
-      # 6. Run WebSocket JMeter script
+
+      # ==========================================
+      # 8. Run WebSocket JMeter test
+      # ==========================================
       - name: Run WebSocket Test
         run: |
 
-          echo "Starting JMeter WebSocket test..."
+          echo "=========================================="
+          echo "Starting JMeter WebSocket Test"
+          echo "=========================================="
 
           ./jmeter-install/bin/jmeter \
             -n \
@@ -67,24 +126,68 @@ jobs:
             -e \
             -o jmeter/results/websocket/html-report
 
-          echo "JMeter test completed successfully."
+          echo ""
+          echo "=========================================="
+          echo "JMeter test completed"
+          echo "=========================================="
 
 
-      # 7. Verify results
+      # ==========================================
+      # 9. Verify generated results
+      # ==========================================
       - name: Verify results
         if: always()
         run: |
 
-          echo "Result files:"
+          echo "=========================================="
+          echo "Generated files"
+          echo "=========================================="
 
-          find jmeter/results/websocket -type f
+          find jmeter/results/websocket -type f -print
+
+          echo ""
+          echo "JTL file:"
+          ls -lh jmeter/results/websocket/websocket.jtl || true
+
+          echo ""
+          echo "HTML report:"
+          ls -lh jmeter/results/websocket/html-report/ || true
 
 
-      # 8. Upload JTL and HTML report
-      - name: Upload WebSocket Results
+      # ==========================================
+      # 10. Upload JTL
+      # ==========================================
+      - name: Upload JTL result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: websocket-test-results
+          name: websocket-jtl-${{ github.run_number }}
+          path: jmeter/results/websocket/websocket.jtl
+          if-no-files-found: warn
+          retention-days: 30
+
+
+      # ==========================================
+      # 11. Upload HTML report
+      # ==========================================
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: websocket-html-report-${{ github.run_number }}
+          path: jmeter/results/websocket/html-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+
+      # ==========================================
+      # 12. Upload complete results folder
+      # ==========================================
+      - name: Upload complete test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: websocket-complete-results-${{ github.run_number }}
           path: jmeter/results/websocket/
+          if-no-files-found: warn
           retention-days: 30
