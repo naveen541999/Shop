@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Verify Java Version
+      - name: Verify Java Version	
         run: java -version
 
       - name: Cache JMeter
@@ -46,12 +46,23 @@ jobs:
           path: apache-jmeter-${{ env.JMETER_VERSION }}
           key: jmeter-${{ env.JMETER_VERSION }}
 
-      - name: Download JMeter
-        if: steps.cache-jmeter.outputs.cache-hit != 'true'
+      - name: Download and Extract JMeter
+        shell: bash
         run: |
-          wget -q https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${{ env.JMETER_VERSION }}.tgz
-          tar -xzf apache-jmeter-${{ env.JMETER_VERSION }}.tgz
-          echo "JMeter downloaded and extracted"
+          set -euo pipefail
+
+          wget --progress=bar:force:noscroll \
+            --timeout=30 \
+            --tries=3 \
+            -O apache-jmeter-${JMETER_VERSION}.tgz \
+            https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
+
+          echo "Extracting JMeter..."
+          tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+
+          test -x "${JMETER_HOME}/bin/jmeter"
+
+          echo "JMeter downloaded and extracted successfully"
 
       - name: Verify JMeter Installation
         run: |
