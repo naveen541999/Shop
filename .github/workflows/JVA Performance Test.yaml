@@ -55,8 +55,7 @@ jobs:
             --timeout=30 \
             --tries=3 \
             -O apache-jmeter-${JMETER_VERSION}.tgz \
-            https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
-
+            https://downloads.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
           echo "Extracting JMeter..."
           tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
 
