@@ -78,13 +78,13 @@ jobs:
           INPUT_RAMPUP: ${{ github.event.inputs.rampup }}
           INPUT_THREADS: ${{ github.event.inputs.threads }}
         run: |
-          if [[ "$INPUT_DURATION" =~ ^[1-9][0-9]*$ ]]; then
+          if ! [[ "$INPUT_DURATION" =~ ^[1-9][0-9]*$ ]]; then
             echo "Invalid duration: $INPUT_DURATION" && exit 1
           fi
-          if [[ "$INPUT_RAMPUP" =~ ^[1-9][0-9]*$ ]]; then
+          if ! [[ "$INPUT_RAMPUP" =~ ^[1-9][0-9]*$ ]]; then
             echo "Invalid rampup: $INPUT_RAMPUP" && exit 1
           fi
-          if [[ "$INPUT_THREADS" =~ ^[1-9][0-9]*$ ]]; then
+          if ! [[ "$INPUT_THREADS" =~ ^[1-9][0-9]*$ ]]; then
             echo "Invalid threads: $INPUT_THREADS" && exit 1
           fi
 
@@ -123,8 +123,8 @@ jobs:
           name: JVA-Test-Results-${{ env.TIMESTAMP }}
           path: |
             results/results.jtl
-	    results/HTMLReport/
+            results/HTMLReport/
             results/session_results.csv
             results/jmeter.log
-          retention-days:30
+          retention-days: 30
           
